@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beatriz Agante - Photo Gallery</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: flex;
+        }
+        .gallery-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .back-arrow {
+            position: absolute; /* Position the back arrow */
+            top: 20px;
+            left: 40px;
+            cursor: pointer;
+            z-index: 1000; /* Ensure it's above other elements */
+            color: lightgray; /* Light gray color */
+            font-size: 24px; /* Adjust font size */
+            font-weight: bold; /* Make it thicker */
+            font-family: Helvetica, Arial, sans-serif; /* Use the same font as in the scene */
+        }
+        .back-arrow:hover {
+            color: gray; /* Darker color on hover */
+        }
+        .instructions {
+            position: absolute;
+            top: 60px;
+            left: 40px;
+            color: lightgray;
+            font-size: 16px;
+            font-family: Helvetica, Arial, sans-serif;
+            /* Add text outline */
+            text-shadow: -1px -1px 0 #000,  
+                          1px -1px 0 #000,
+                         -1px  1px 0 #000,
+                          1px  1px 0 #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="gallery-container">
+        <div id="gallery"></div> <!-- Container for the gallery -->
+        <div class="back-arrow" id="backArrow">&larr; go back</div> <!-- Back arrow -->
+        <instructions class="instructions">slide to the bottom using the cursor, click on a photo to zoom it</instructions>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Set up scene
+        var scene = new THREE.Scene();
+        var camera = new THREE.OrthographicCamera(-window.innerWidth / 2, window.innerWidth / 2, window.innerHeight / 2, -window.innerHeight / 2, 1, 1000);
+
+        var renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        var galleryContainer = document.getElementById('gallery');
+        galleryContainer.appendChild(renderer.domElement);
+
+        // Add ambient light
+        var ambientLight = new THREE.AmbientLight(0xffffff, 1);
+        scene.add(ambientLight);
+
+        //create a background plane
+        var bgGeometry = new THREE.PlaneGeometry(window.innerWidth * 2, window.innerHeight * 100);
+        var bgMaterial = new THREE.MeshBasicMaterial({ color: 0x222222 });
+        var background = new THREE.Mesh(bgGeometry, bgMaterial);
+        background.position.z = -100;
+        scene.add(background);
+
+
+
+        // Create gallery
+        var imageWidth = 200;
+        var imageHeight = 150;
+        var padding = 20;
+        var numRows = 8; // Number of rows
+        var numCols = 5; // Number of columns
+
+        var galleryWidth = numCols * (imageWidth + padding) - padding;
+        var galleryHeight = numRows * (imageHeight + padding) - padding;
+
+        var startX = -galleryWidth / 2 + imageWidth / 2;
+        var startY = galleryHeight / 2 - imageHeight / 2;
+
+        var colors = [
+            0xff0000, 0x00ff00, 0x0000ff,
+            0xffff00, 0xff00ff, 0x00ffff,
+            0xff0000, 0x00ff00, 0x0000ff,
+            0xffff00, 0xff00ff, 0x00ffff,
+            0xff0000, 0x00ff00, 0x0000ff,
+            0xff0000, 0x00ff00, 0x0000ff,
+            0xffff00, 0xff00ff, 0x00ffff,
+            0xff0000, 0x00ff00, 0x0000ff,
+            0xffff00, 0xff00ff, 0x00ffff,
+            0xff0000, 0x00ff00, 0x0000ff,
+            0xff0000, 0x00ff00, 0x0000ff,
+            0xffff00, 0xff00ff, 0x00ffff,
+            0xff0000, 0x00ff00, 0x0000ff,
+            0xffff00, 0xff00ff, 0x00ffff,
+            0xff0000, 0x00ff00, 0x0000ff,
+            0xff0000, 0x00ff00, 0x0000ff,
+            0xffff00, 0xff00ff, 
+        ]; // Placeholder colors
+
+        colors.forEach(function(color, index) {
+        var material = new THREE.MeshBasicMaterial({ color: color });
+        var geometry = new THREE.PlaneGeometry(imageWidth, imageHeight);
+        var plane = new THREE.Mesh(geometry, material);
+        plane.originalScale = plane.scale.clone(); // Store original scale
+
+        // Positioning each plane in a grid layout
+        var row = Math.floor(index / numCols);
+        var col = index % numCols;
+        plane.position.x = startX + col * (imageWidth + padding);
+        plane.position.y = -row * (imageHeight + padding) + (imageHeight + padding);
+        scene.add(plane); 
+
+        // Load and apply texture to the first plane
+        if (index === 0) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide1.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 1) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide2.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        } 
+
+        if (index === 2) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide3.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        } 
+
+        if (index === 3) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide4.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        } 
+
+        if (index === 4) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide5.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        } 
+
+        if (index === 5) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide6.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        } 
+
+        if (index === 6) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide7.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        } 
+
+        if (index === 7) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide8.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        } 
+
+        if (index === 8) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide9.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 9) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide10.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 10) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide11.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 11) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide12.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 12) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide13.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 13) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide14.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 14) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide15.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 15) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide16.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 16) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide17.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 17) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide18.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 18) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide19.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 19) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide20.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 20) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide21.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 21) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide22.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 22) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide23.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 23) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide24.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 24) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide25.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 25) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide26.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 26) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide27.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 27) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide28.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 28) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide29.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 29) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide30.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 30) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide31.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 31) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide32.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 32) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide33.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 33) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide34.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 34) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide35.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 35) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide36.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 36) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide37.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 37) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide38.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 38) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide39.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 39) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide40.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 40) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide41.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 41) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide42.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 42) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide43.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 43) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide44.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 44) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide45.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 45) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide46.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 46) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide47.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 47) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide48.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 48) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide49.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+
+        if (index === 49) {
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load('../assets/slide50.jpg', function(texture) {
+                var aspectRatio = texture.image.width / texture.image.height;
+                plane.scale.set(imageWidth * aspectRatio, imageHeight, 1);
+
+                var material = new THREE.MeshBasicMaterial({ map: texture });
+                plane.material = material;
+            });
+        }
+    });
+
+
+        // Position camera
+        camera.position.z = 5;
+
+        var raycaster = new THREE.Raycaster();
+        var mouseVector = new THREE.Vector2();
+        var maxPlaneDisplacement = 50; // Maximum displacement of the plane
+
+        function onMouseMove(event) {
+            // Calculate mouse position in normalized device coordinates
+            mouseVector.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouseVector.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            // Update raycaster with mouse position
+            raycaster.setFromCamera(mouseVector, camera);
+
+            // Check for intersections with the planes
+            var intersects = raycaster.intersectObjects(scene.children, true);
+
+            // If intersection found, zoom in the plane slightly
+            if (intersects.length > 0) {
+                // Reset scale of previously intersected planes
+                scene.children.forEach(function(child) {
+                    if (child.isMesh) {
+                        child.scale.set(1, 1, 1);
+                    }
+                });
+
+                // Scale the intersected plane
+                intersects[0].object.scale.set(1.1, 1.1, 1.1); // Adjust the scale factor as needed
+            }
+        }
+
+        var maxVerticalPosition = 50; // Adjust as needed
+        var minVerticalPosition = -150 * numRows; // Adjust as needed
+
+        function updateCameraPosition() {
+            // Calculate new camera position
+            var newPositionY = camera.position.y + mouseVector.y * 10; // Adjust speed as needed
+
+            // Apply maximum and minimum limits
+            if (newPositionY > maxVerticalPosition) {
+                camera.position.y = maxVerticalPosition;
+            } else if (newPositionY < minVerticalPosition) {
+                camera.position.y = minVerticalPosition;
+            } else {
+                camera.position.y = newPositionY;
+            }
+        }
+
+        function toggleFullscreen(plane) {
+            if (!plane.isFullScreen) {
+                var fullscreenPlane = plane.clone();
+                fullscreenPlane.scale.set(4, 3, 1);
+                fullscreenPlane.position.set(0, plane.position.y, -1);
+
+                // Disable depth testing for the fullscreen plane
+                fullscreenPlane.material.depthTest = false;
+                fullscreenPlane.renderOrder = Number.MAX_SAFE_INTEGER; // Ensure it's rendered last
+
+                scene.add(fullscreenPlane);
+                plane.isFullScreen = true;
+            } else {
+                scene.remove(scene.children[scene.children.length - 1]);
+                plane.isFullScreen = false;
+            }
+        }
+
+
+        // Listen for mouse move events
+        document.addEventListener('mousemove', onMouseMove, false);
+        
+        // Listen for click events
+        document.addEventListener('click', function(event) {
+            // Update raycaster with mouse position
+            raycaster.setFromCamera(mouseVector, camera);
+
+            // Check for intersections with the planes
+            var intersects = raycaster.intersectObjects(scene.children, true);
+
+            // If intersection found, toggle fullscreen
+            if (intersects.length > 0) {
+                toggleFullscreen(intersects[0].object);
+            }
+        }, false);
+
+        // Render the scene
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update camera position
+            updateCameraPosition();
+
+            // Render the scene
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        document.getElementById('backArrow').addEventListener('click', function() {
+            // Perform the action when the back arrow is clicked, such as navigating back
+            window.history.back();
+        });
+
+    </script>
+</body>
+</html>
